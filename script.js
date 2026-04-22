@@ -100,7 +100,6 @@ let state = loadState();
 let restTimerId = null;
 let restTimerRemaining = 90;
 let suppressRemoteSave = false;
-let syncTimeoutId = null;
 
 const supabaseUrl = window.EDGELIFT_SUPABASE_URL || "";
 const supabaseAnonKey = window.EDGELIFT_SUPABASE_ANON_KEY || "";
@@ -139,6 +138,13 @@ function defaultProgression() {
     bonusXp: 0,
     daily: { key: "", claimed: {} },
     weekly: { key: "", claimed: {} }
+  };
+}
+
+function defaultMeta() {
+  return {
+    lastUpdatedAt: "",
+    lastSyncedAt: ""
   };
 }
 
@@ -198,6 +204,7 @@ function normalizeTemplate(template) {
 
 function normalizeState(source = {}) {
   const progression = source.progression || defaultProgression();
+  const meta = source.meta || defaultMeta();
   return {
     workouts: Array.isArray(source.workouts) ? source.workouts.map(normalizeWorkout) : [],
     meals: Array.isArray(source.meals) ? source.meals.map(normalizeMeal) : [],
@@ -231,6 +238,10 @@ function normalizeState(source = {}) {
         claimed: progression.weekly?.claimed && typeof progression.weekly.claimed === "object" ? progression.weekly.claimed : {}
       }
     },
+    meta: {
+      lastUpdatedAt: meta.lastUpdatedAt || "",
+      lastSyncedAt: meta.lastSyncedAt || ""
+    },
     templates: Array.isArray(source.templates) && source.templates.length
       ? source.templates.map(normalizeTemplate)
       : defaultTemplates()
@@ -258,6 +269,7 @@ function loadState() {
 }
 
 function saveState() {
+  state.meta.lastUpdatedAt = new Date().toISOString();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   queueRemoteSave();
 }
@@ -365,7 +377,7 @@ async function loadRemoteState() {
   }
   const { data, error } = await supabase
     .from("user_app_state")
-    .select("state")
+    .select("state, updated_at")
     .eq("user_id", currentUser.id)
     .maybeSingle();
   if (error) {
@@ -373,6 +385,13 @@ async function loadRemoteState() {
     return;
   }
   if (data?.state) {
+    const localUpdatedAt = state.meta?.lastUpdatedAt ? new Date(state.meta.lastUpdatedAt).getTime() : 0;
+    const remoteUpdatedAt = data.updated_at ? new Date(data.updated_at).getTime() : 0;
+    if (localUpdatedAt > remoteUpdatedAt) {
+      await persistRemoteState();
+      setAuthStatus("Local state was newer, so it was pushed to cloud.");
+      return;
+    }
     suppressRemoteSave = true;
     state = normalizeState(data.state);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -396,6 +415,10 @@ async function persistRemoteState() {
     setAuthStatus(error.message, true);
     return;
   }
+  suppressRemoteSave = true;
+  state.meta.lastSyncedAt = new Date().toISOString();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  suppressRemoteSave = false;
   setAuthStatus("Cloud sync active.");
 }
 
@@ -403,12 +426,7 @@ function queueRemoteSave() {
   if (!supabase || !currentUser || suppressRemoteSave) {
     return;
   }
-  if (syncTimeoutId) {
-    clearTimeout(syncTimeoutId);
-  }
-  syncTimeoutId = setTimeout(() => {
-    persistRemoteState();
-  }, 300);
+  persistRemoteState();
 }
 
 function formatWeight(value) {
