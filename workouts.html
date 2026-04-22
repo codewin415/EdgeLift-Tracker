@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="app.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="stylesheet" href="styles.css?v=7">
 </head>
 <body>
   <div class="gridlines" aria-hidden="true"></div>
@@ -104,6 +104,112 @@
       </div>
 
       <div class="panel-subsection">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Armory</p>
+            <h2>Routines and live sessions</h2>
+          </div>
+        </div>
+
+        <div class="armory-grid">
+          <section class="armory-panel panel">
+            <div class="panel-heading">
+              <p class="eyebrow">Routine Builder</p>
+              <h2>Forge a loadout</h2>
+            </div>
+
+            <form id="routineForm" class="workout-form">
+              <input id="editingRoutineId" type="hidden">
+              <label>
+                Routine name
+                <input id="routineNameInput" type="text" placeholder="Upper A | Push Protocol" maxlength="48" required>
+              </label>
+
+              <label>
+                Routine notes
+                <input id="routineNotesInput" type="text" placeholder="Chest focus with shoulder accessories" maxlength="120">
+              </label>
+
+              <div class="armory-add-row">
+                <label>
+                  Exercise
+                  <input id="routineExerciseInput" type="text" placeholder="Incline Bench Press" maxlength="48">
+                </label>
+                <label>
+                  Sets
+                  <input id="routineTargetSetsInput" type="number" min="1" step="1" placeholder="3">
+                </label>
+                <label>
+                  Reps
+                  <input id="routineTargetRepsInput" type="number" min="1" step="1" placeholder="8">
+                </label>
+              </div>
+
+              <label>
+                Exercise note
+                <input id="routineExerciseNotesInput" type="text" placeholder="Pause first rep, controlled eccentric" maxlength="90">
+              </label>
+
+              <div class="tool-row armory-actions">
+                <button id="addRoutineExerciseButton" type="button" class="ghost-btn">Add Exercise</button>
+                <button id="saveRoutineButton" type="submit" class="primary-btn">Save Routine</button>
+              </div>
+            </form>
+
+            <div id="routineDraftList" class="draft-list" aria-live="polite"></div>
+          </section>
+
+          <section class="session-panel panel">
+            <div class="panel-heading">
+              <p class="eyebrow">Live Session</p>
+              <h2>Run the workout</h2>
+            </div>
+
+            <div id="activeSessionSummary" class="highlight-card">
+              <p>No active session. Launch a routine from the armory or start an empty workout.</p>
+            </div>
+
+            <div class="tool-row session-top-actions">
+              <button id="startEmptySessionButton" type="button" class="ghost-btn">Start Empty Session</button>
+              <button id="finishSessionButton" type="button" class="primary-btn">Finish Session</button>
+            </div>
+
+            <div id="sessionExerciseComposer" class="session-composer">
+              <div class="armory-add-row">
+                <label>
+                  Exercise
+                  <input id="sessionExerciseInput" type="text" placeholder="Cable Row" maxlength="48">
+                </label>
+                <label>
+                  Sets
+                  <input id="sessionTargetSetsInput" type="number" min="1" step="1" placeholder="3">
+                </label>
+                <label>
+                  Reps
+                  <input id="sessionTargetRepsInput" type="number" min="1" step="1" placeholder="12">
+                </label>
+              </div>
+              <label>
+                Exercise note
+                <input id="sessionExerciseNotesInput" type="text" placeholder="Last set to failure if clean" maxlength="90">
+              </label>
+              <button id="addSessionExerciseButton" type="button" class="ghost-btn">Add Exercise To Session</button>
+            </div>
+
+            <div id="sessionExerciseList" class="session-exercise-list" aria-live="polite"></div>
+          </section>
+        </div>
+
+        <div class="panel-heading armory-heading">
+          <div>
+            <p class="eyebrow">Locker</p>
+            <h2>Saved routines</h2>
+          </div>
+        </div>
+        <div id="routineList" class="routine-list" aria-live="polite"></div>
+      </div>
+
+      <div class="panel-subsection">
         <div class="panel-heading history-heading">
           <div>
             <p class="eyebrow">Archive</p>
@@ -150,7 +256,24 @@
     </article>
   </template>
 
+  <template id="routineTemplate">
+    <article class="routine-card">
+      <div class="routine-card-head">
+        <div>
+          <h3 class="routine-name"></h3>
+          <p class="routine-meta"></p>
+        </div>
+        <div class="routine-actions">
+          <button type="button" class="ghost-btn" data-routine-action="edit">Edit</button>
+          <button type="button" class="delete-btn" data-routine-action="delete">Delete</button>
+        </div>
+      </div>
+      <div class="routine-preview"></div>
+      <button type="button" class="primary-btn" data-routine-action="start">Start Routine</button>
+    </article>
+  </template>
+
   <script src="supabase-config.js"></script>
-  <script type="module" src="script.js?v=6"></script>
+  <script type="module" src="script.js?v=7"></script>
 </body>
 </html>

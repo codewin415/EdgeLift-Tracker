@@ -6,6 +6,7 @@ const OLDER_STORAGE_KEY = "edgelift-dashboard-v2";
 const OLDEST_STORAGE_KEY = "edgelift-workouts-v1";
 
 const workoutForm = document.getElementById("workoutForm");
+const routineForm = document.getElementById("routineForm");
 const macroForm = document.getElementById("macroForm");
 const goalForm = document.getElementById("goalForm");
 const hydrationForm = document.getElementById("hydrationForm");
@@ -14,6 +15,13 @@ const exerciseInput = document.getElementById("exerciseInput");
 const weightInput = document.getElementById("weightInput");
 const repsInput = document.getElementById("repsInput");
 const notesInput = document.getElementById("notesInput");
+const editingRoutineIdInput = document.getElementById("editingRoutineId");
+const routineNameInput = document.getElementById("routineNameInput");
+const routineNotesInput = document.getElementById("routineNotesInput");
+const routineExerciseInput = document.getElementById("routineExerciseInput");
+const routineTargetSetsInput = document.getElementById("routineTargetSetsInput");
+const routineTargetRepsInput = document.getElementById("routineTargetRepsInput");
+const routineExerciseNotesInput = document.getElementById("routineExerciseNotesInput");
 const mealInput = document.getElementById("mealInput");
 const proteinInput = document.getElementById("proteinInput");
 const carbsInput = document.getElementById("carbsInput");
@@ -34,6 +42,7 @@ const stretchInput = document.getElementById("stretchInput");
 const supplementsInput = document.getElementById("supplementsInput");
 const templateSelect = document.getElementById("templateSelect");
 const applyTemplateButton = document.getElementById("applyTemplateButton");
+const addRoutineExerciseButton = document.getElementById("addRoutineExerciseButton");
 const exerciseSearch = document.getElementById("exerciseSearch");
 const exerciseFilter = document.getElementById("exerciseFilter");
 const nextSetCard = document.getElementById("nextSetCard");
@@ -41,6 +50,18 @@ const startRestTimerButton = document.getElementById("startRestTimer");
 const restTimerDisplay = document.getElementById("restTimerDisplay");
 const exportDataButton = document.getElementById("exportDataButton");
 const importDataInput = document.getElementById("importDataInput");
+const routineDraftList = document.getElementById("routineDraftList");
+const routineList = document.getElementById("routineList");
+const routineTemplate = document.getElementById("routineTemplate");
+const activeSessionSummary = document.getElementById("activeSessionSummary");
+const sessionExerciseList = document.getElementById("sessionExerciseList");
+const startEmptySessionButton = document.getElementById("startEmptySessionButton");
+const finishSessionButton = document.getElementById("finishSessionButton");
+const sessionExerciseInput = document.getElementById("sessionExerciseInput");
+const sessionTargetSetsInput = document.getElementById("sessionTargetSetsInput");
+const sessionTargetRepsInput = document.getElementById("sessionTargetRepsInput");
+const sessionExerciseNotesInput = document.getElementById("sessionExerciseNotesInput");
+const addSessionExerciseButton = document.getElementById("addSessionExerciseButton");
 const modeBulkButton = document.getElementById("modeBulkButton");
 const modeCutButton = document.getElementById("modeCutButton");
 const modeMaintainButton = document.getElementById("modeMaintainButton");
@@ -101,6 +122,7 @@ let restTimerId = null;
 let restTimerRemaining = 90;
 let suppressRemoteSave = false;
 let toastTimeoutId = null;
+let routineDraft = [];
 
 const supabaseUrl = window.EDGELIFT_SUPABASE_URL || "";
 const supabaseAnonKey = window.EDGELIFT_SUPABASE_ANON_KEY || "";
@@ -131,6 +153,31 @@ function defaultTemplates() {
     { id: "template-pull", name: "Pull Day", exercise: "Barbell Row", weight: 155, reps: 10, notes: "Drive elbows back hard" },
     { id: "template-legs", name: "Leg Day", exercise: "Back Squat", weight: 225, reps: 5, notes: "Brace hard and own the hole" },
     { id: "template-upper", name: "Upper Power", exercise: "Overhead Press", weight: 115, reps: 6, notes: "Explosive first rep" }
+  ];
+}
+
+function defaultRoutines() {
+  return [
+    {
+      id: "routine-upper-a",
+      name: "Upper A | Chest Protocol",
+      notes: "Primary press focus with shoulder support.",
+      exercises: [
+        { id: "ra1", name: "Incline Bench Press", targetSets: 3, targetReps: 8, notes: "Own the stretch and stay explosive." },
+        { id: "ra2", name: "Chest Fly", targetSets: 3, targetReps: 12, notes: "Full squeeze at the peak." },
+        { id: "ra3", name: "Lateral Raise", targetSets: 3, targetReps: 15, notes: "Keep tension, no swing." }
+      ]
+    },
+    {
+      id: "routine-upper-b",
+      name: "Upper B | Back Protocol",
+      notes: "Lat and upper-back volume with one press anchor.",
+      exercises: [
+        { id: "rb1", name: "Lat Pulldown", targetSets: 4, targetReps: 10, notes: "Drive elbows to ribs." },
+        { id: "rb2", name: "Seated Row", targetSets: 3, targetReps: 10, notes: "Pause on every contraction." },
+        { id: "rb3", name: "Incline Dumbbell Press", targetSets: 3, targetReps: 10, notes: "Smooth touch and go reps." }
+      ]
+    }
   ];
 }
 
@@ -169,6 +216,8 @@ function normalizeWorkout(workout) {
     weight: safeNumber(workout.weight),
     reps: safeNumber(workout.reps, 1),
     notes: String(workout.notes || "").trim(),
+    sessionId: workout.sessionId || "",
+    routineId: workout.routineId || "",
     createdAt: workout.createdAt || new Date().toISOString()
   };
 }
@@ -204,11 +253,65 @@ function normalizeTemplate(template) {
   };
 }
 
+function normalizeRoutineExercise(exercise) {
+  return {
+    id: exercise.id || makeId("routine-exercise"),
+    name: titleCase(exercise.name || exercise.exercise || "Exercise"),
+    targetSets: safeNumber(exercise.targetSets, 3),
+    targetReps: safeNumber(exercise.targetReps, 8),
+    notes: String(exercise.notes || "").trim()
+  };
+}
+
+function normalizeRoutine(routine) {
+  return {
+    id: routine.id || makeId("routine"),
+    name: String(routine.name || "Routine").trim(),
+    notes: String(routine.notes || "").trim(),
+    exercises: Array.isArray(routine.exercises) ? routine.exercises.map(normalizeRoutineExercise) : []
+  };
+}
+
+function normalizeSessionExercise(exercise) {
+  return {
+    id: exercise.id || makeId("session-exercise"),
+    name: titleCase(exercise.name || exercise.exercise || "Exercise"),
+    targetSets: safeNumber(exercise.targetSets, 3),
+    targetReps: safeNumber(exercise.targetReps, 8),
+    notes: String(exercise.notes || "").trim(),
+    sets: Array.isArray(exercise.sets) ? exercise.sets.map((set) => ({
+      id: set.id || makeId("workout"),
+      weight: safeNumber(set.weight),
+      reps: safeNumber(set.reps, 1),
+      notes: String(set.notes || "").trim(),
+      createdAt: set.createdAt || new Date().toISOString()
+    })) : []
+  };
+}
+
+function normalizeActiveSession(session) {
+  if (!session || typeof session !== "object") {
+    return null;
+  }
+  return {
+    id: session.id || makeId("session"),
+    routineId: session.routineId || "",
+    name: String(session.name || "Live Session").trim(),
+    notes: String(session.notes || "").trim(),
+    startedAt: session.startedAt || new Date().toISOString(),
+    exercises: Array.isArray(session.exercises) ? session.exercises.map(normalizeSessionExercise) : []
+  };
+}
+
 function normalizeState(source = {}) {
   const progression = source.progression || defaultProgression();
   const meta = source.meta || defaultMeta();
   return {
     workouts: Array.isArray(source.workouts) ? source.workouts.map(normalizeWorkout) : [],
+    routines: Array.isArray(source.routines) && source.routines.length
+      ? source.routines.map(normalizeRoutine)
+      : defaultRoutines(),
+    activeSession: normalizeActiveSession(source.activeSession),
     meals: Array.isArray(source.meals) ? source.meals.map(normalizeMeal) : [],
     goals: {
       calories: safeNumber(source.goals?.calories, defaultGoals().calories),
@@ -1146,6 +1249,258 @@ function populateTemplateSelect() {
   templateSelect.value = current;
 }
 
+function resetRoutineBuilder() {
+  routineDraft = [];
+  if (routineForm) {
+    routineForm.reset();
+  }
+  if (editingRoutineIdInput) {
+    editingRoutineIdInput.value = "";
+  }
+  renderRoutineDraft();
+}
+
+function loadRoutineIntoBuilder(routineId) {
+  const routine = state.routines.find((entry) => entry.id === routineId);
+  if (!routine) {
+    return;
+  }
+  if (editingRoutineIdInput) editingRoutineIdInput.value = routine.id;
+  if (routineNameInput) routineNameInput.value = routine.name;
+  if (routineNotesInput) routineNotesInput.value = routine.notes;
+  routineDraft = routine.exercises.map((exercise) => ({ ...exercise }));
+  renderRoutineDraft();
+}
+
+function addDraftExercise() {
+  const name = titleCase(routineExerciseInput?.value || "");
+  const targetSets = Number(routineTargetSetsInput?.value) || 0;
+  const targetReps = Number(routineTargetRepsInput?.value) || 0;
+  const notes = routineExerciseNotesInput?.value.trim() || "";
+  if (!name || targetSets <= 0 || targetReps <= 0) {
+    showToast("Add an exercise name plus target sets and reps.", "warning");
+    return;
+  }
+  routineDraft.push({
+    id: makeId("routine-exercise"),
+    name,
+    targetSets,
+    targetReps,
+    notes
+  });
+  if (routineExerciseInput) routineExerciseInput.value = "";
+  if (routineTargetSetsInput) routineTargetSetsInput.value = "";
+  if (routineTargetRepsInput) routineTargetRepsInput.value = "";
+  if (routineExerciseNotesInput) routineExerciseNotesInput.value = "";
+  renderRoutineDraft();
+}
+
+function renderRoutineDraft() {
+  if (!routineDraftList) {
+    return;
+  }
+  routineDraftList.innerHTML = "";
+  if (!routineDraft.length) {
+    routineDraftList.innerHTML = '<div class="empty-state">No exercises queued yet. Build a routine by stacking movements with target sets and reps.</div>';
+    return;
+  }
+  routineDraft.forEach((exercise, index) => {
+    const item = document.createElement("article");
+    item.className = "draft-card";
+    item.innerHTML = `
+      <div class="draft-card-head">
+        <div>
+          <strong>${index + 1}. ${exercise.name}</strong>
+          <p>${exercise.targetSets} sets x ${exercise.targetReps} reps${exercise.notes ? ` | ${exercise.notes}` : ""}</p>
+        </div>
+        <button type="button" class="delete-btn" data-draft-exercise-id="${exercise.id}">Remove</button>
+      </div>
+    `;
+    routineDraftList.appendChild(item);
+  });
+}
+
+function renderRoutineList() {
+  if (!routineList || !routineTemplate) {
+    return;
+  }
+  routineList.innerHTML = "";
+  if (!state.routines.length) {
+    routineList.innerHTML = '<div class="empty-state">No routines stored yet. Forge your first loadout in the armory.</div>';
+    return;
+  }
+  state.routines.forEach((routine) => {
+    const fragment = routineTemplate.content.cloneNode(true);
+    const card = fragment.querySelector(".routine-card");
+    card.dataset.routineId = routine.id;
+    fragment.querySelector(".routine-name").textContent = routine.name;
+    fragment.querySelector(".routine-meta").textContent = `${routine.exercises.length} exercise${routine.exercises.length === 1 ? "" : "s"}${routine.notes ? ` | ${routine.notes}` : ""}`;
+    const preview = fragment.querySelector(".routine-preview");
+    routine.exercises.forEach((exercise) => {
+      const chip = document.createElement("span");
+      chip.className = "routine-chip";
+      chip.textContent = `${exercise.name} (${exercise.targetSets}x${exercise.targetReps})`;
+      preview.appendChild(chip);
+    });
+    fragment.querySelector('[data-routine-action="edit"]').dataset.routineId = routine.id;
+    fragment.querySelector('[data-routine-action="delete"]').dataset.routineId = routine.id;
+    fragment.querySelector('[data-routine-action="start"]').dataset.routineId = routine.id;
+    routineList.appendChild(fragment);
+  });
+}
+
+function sessionTotalSets() {
+  if (!state.activeSession) {
+    return 0;
+  }
+  return state.activeSession.exercises.reduce((total, exercise) => total + exercise.sets.length, 0);
+}
+
+function renderActiveSession() {
+  if (!activeSessionSummary || !sessionExerciseList) {
+    return;
+  }
+  const session = state.activeSession;
+  if (!session) {
+    activeSessionSummary.innerHTML = '<p>No active session. Launch a routine from the armory or start an empty workout.</p>';
+    sessionExerciseList.innerHTML = '<div class="empty-state">Start a live session to log a full workout with multiple exercises.</div>';
+    if (finishSessionButton) finishSessionButton.disabled = true;
+    return;
+  }
+
+  activeSessionSummary.innerHTML = `
+    <span class="milestone-label">Session online</span>
+    <h3>${session.name}</h3>
+    <p>Started ${formatDate(session.startedAt)} | ${session.exercises.length} exercise${session.exercises.length === 1 ? "" : "s"} | ${sessionTotalSets()} set${sessionTotalSets() === 1 ? "" : "s"} logged</p>
+  `;
+  if (finishSessionButton) finishSessionButton.disabled = false;
+  sessionExerciseList.innerHTML = "";
+
+  if (!session.exercises.length) {
+    sessionExerciseList.innerHTML = '<div class="empty-state">This session is empty. Add your first exercise to begin logging sets.</div>';
+    return;
+  }
+
+  session.exercises.forEach((exercise) => {
+    const card = document.createElement("article");
+    card.className = "session-card";
+    card.innerHTML = `
+      <div class="session-card-head">
+        <div>
+          <h3>${exercise.name}</h3>
+          <p>${exercise.targetSets} target sets x ${exercise.targetReps} reps${exercise.notes ? ` | ${exercise.notes}` : ""}</p>
+        </div>
+        <button type="button" class="delete-btn" data-session-remove-exercise="${exercise.id}">Remove</button>
+      </div>
+      <div class="session-log-grid">
+        <label>
+          Weight
+          <input type="number" min="0" step="0.5" placeholder="185" data-session-weight="${exercise.id}">
+        </label>
+        <label>
+          Reps
+          <input type="number" min="1" step="1" placeholder="${exercise.targetReps}" data-session-reps="${exercise.id}">
+        </label>
+        <label class="session-note-field">
+          Notes
+          <input type="text" maxlength="90" placeholder="Top set felt smooth" data-session-notes="${exercise.id}">
+        </label>
+        <button type="button" class="primary-btn" data-session-log-id="${exercise.id}">Log Set</button>
+      </div>
+      <div class="session-set-list">
+        ${exercise.sets.length
+          ? exercise.sets.slice().reverse().map((set) => `
+            <article class="session-set-row">
+              <div>
+                <strong>${formatWeight(set.weight)} x ${set.reps}</strong>
+                <p>${formatDate(set.createdAt)}${set.notes ? ` | ${set.notes}` : ""}</p>
+              </div>
+              <button type="button" class="delete-btn" data-session-delete-set="${set.id}" data-session-exercise-id="${exercise.id}">Delete</button>
+            </article>
+          `).join("")
+          : '<div class="empty-state compact">No sets logged for this exercise yet.</div>'}
+      </div>
+    `;
+    sessionExerciseList.appendChild(card);
+  });
+}
+
+function startRoutineSession(routineId) {
+  const routine = state.routines.find((entry) => entry.id === routineId);
+  if (!routine) {
+    return;
+  }
+  state.activeSession = {
+    id: makeId("session"),
+    routineId: routine.id,
+    name: routine.name,
+    notes: routine.notes,
+    startedAt: new Date().toISOString(),
+    exercises: routine.exercises.map((exercise) => ({
+      ...exercise,
+      sets: []
+    }))
+  };
+  saveState();
+  renderWorkouts();
+  showToast(`${routine.name} session started`, "success");
+}
+
+function startEmptySession() {
+  state.activeSession = {
+    id: makeId("session"),
+    routineId: "",
+    name: "Freeform Session",
+    notes: "",
+    startedAt: new Date().toISOString(),
+    exercises: []
+  };
+  saveState();
+  renderWorkouts();
+  showToast("Empty workout session started", "success");
+}
+
+function finishActiveSession() {
+  if (!state.activeSession) {
+    return;
+  }
+  const finishedName = state.activeSession.name;
+  state.activeSession = null;
+  saveState();
+  renderWorkouts();
+  showToast(`${finishedName} archived`, "success");
+}
+
+function addExerciseToSession() {
+  if (!state.activeSession) {
+    showToast("Start a session before adding exercises.", "warning");
+    return;
+  }
+  const name = titleCase(sessionExerciseInput?.value || "");
+  const targetSets = Number(sessionTargetSetsInput?.value) || 0;
+  const targetReps = Number(sessionTargetRepsInput?.value) || 0;
+  const notes = sessionExerciseNotesInput?.value.trim() || "";
+  if (!name || targetSets <= 0 || targetReps <= 0) {
+    showToast("Add an exercise name plus target sets and reps.", "warning");
+    return;
+  }
+  state.activeSession.exercises.push({
+    id: makeId("session-exercise"),
+    name,
+    targetSets,
+    targetReps,
+    notes,
+    sets: []
+  });
+  saveState();
+  renderWorkouts();
+  if (sessionExerciseInput) sessionExerciseInput.value = "";
+  if (sessionTargetSetsInput) sessionTargetSetsInput.value = "";
+  if (sessionTargetRepsInput) sessionTargetRepsInput.value = "";
+  if (sessionExerciseNotesInput) sessionExerciseNotesInput.value = "";
+  showToast(`${name} added to session`, "success");
+}
+
 function populateExerciseFilter() {
   if (!exerciseFilter) {
     return;
@@ -1200,6 +1555,9 @@ function renderWorkouts() {
   populateTemplateSelect();
   populateExerciseFilter();
   renderNextSetCard();
+  renderRoutineDraft();
+  renderRoutineList();
+  renderActiveSession();
 
   if (!exerciseList || !exerciseTemplate) {
     return;
@@ -1501,6 +1859,7 @@ function importBackup(file) {
   reader.onload = () => {
     try {
       state = normalizeState(JSON.parse(String(reader.result)));
+      resetRoutineBuilder();
       saveState();
       renderDashboard();
       alert("Backup restored.");
@@ -1538,6 +1897,39 @@ if (workoutForm) {
     showToast(`${exercise} logged: ${formatWeight(weight)} x ${reps}`, "success");
     workoutForm.reset();
     exerciseInput.focus();
+  });
+}
+
+if (routineForm) {
+  routineForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const name = routineNameInput?.value.trim() || "";
+    const notes = routineNotesInput?.value.trim() || "";
+    const editingId = editingRoutineIdInput?.value || "";
+    if (!name) {
+      showToast("Give the routine a name before saving it.", "warning");
+      return;
+    }
+    if (!routineDraft.length) {
+      showToast("Add at least one exercise to save the routine.", "warning");
+      return;
+    }
+    const routine = {
+      id: editingId || makeId("routine"),
+      name,
+      notes,
+      exercises: routineDraft.map((exercise) => ({ ...exercise }))
+    };
+    if (editingId) {
+      state.routines = state.routines.map((entry) => entry.id === editingId ? routine : entry);
+      showToast(`${name} updated in the armory`, "success");
+    } else {
+      state.routines.unshift(routine);
+      showToast(`${name} stored in the armory`, "success");
+    }
+    saveState();
+    resetRoutineBuilder();
+    renderWorkouts();
   });
 }
 
@@ -1632,9 +2024,118 @@ if (exerciseList) {
   });
 }
 
+if (routineDraftList) {
+  routineDraftList.addEventListener("click", (event) => {
+    const target = event.target.closest("[data-draft-exercise-id]");
+    if (!target) return;
+    routineDraft = routineDraft.filter((exercise) => exercise.id !== target.dataset.draftExerciseId);
+    renderRoutineDraft();
+  });
+}
+
+if (routineList) {
+  routineList.addEventListener("click", (event) => {
+    const target = event.target.closest("[data-routine-action]");
+    if (!target) return;
+    const routineId = target.dataset.routineId;
+    const action = target.dataset.routineAction;
+    if (action === "start") {
+      startRoutineSession(routineId);
+      return;
+    }
+    if (action === "edit") {
+      loadRoutineIntoBuilder(routineId);
+      showToast("Routine loaded into builder", "success");
+      return;
+    }
+    if (action === "delete") {
+      const deleted = state.routines.find((routine) => routine.id === routineId);
+      state.routines = state.routines.filter((routine) => routine.id !== routineId);
+      if (editingRoutineIdInput?.value === routineId) {
+        resetRoutineBuilder();
+      }
+      saveState();
+      renderWorkouts();
+      if (deleted) {
+        showToast(`${deleted.name} deleted`, "warning");
+      }
+    }
+  });
+}
+
+if (sessionExerciseList) {
+  sessionExerciseList.addEventListener("click", (event) => {
+    const logButton = event.target.closest("[data-session-log-id]");
+    if (logButton && state.activeSession) {
+      const exerciseId = logButton.dataset.sessionLogId;
+      const exercise = state.activeSession.exercises.find((entry) => entry.id === exerciseId);
+      if (!exercise) return;
+      const weightField = sessionExerciseList.querySelector(`[data-session-weight="${exerciseId}"]`);
+      const repsField = sessionExerciseList.querySelector(`[data-session-reps="${exerciseId}"]`);
+      const notesField = sessionExerciseList.querySelector(`[data-session-notes="${exerciseId}"]`);
+      const weight = Number(weightField?.value);
+      const reps = Number(repsField?.value);
+      const notes = notesField?.value.trim() || "";
+      if (Number.isNaN(weight) || Number.isNaN(reps) || weight < 0 || reps <= 0) {
+        showToast("Enter a valid weight and reps to log the set.", "warning");
+        return;
+      }
+      const workoutId = makeId("workout");
+      const createdAt = new Date().toISOString();
+      const set = { id: workoutId, weight, reps, notes, createdAt };
+      exercise.sets.push(set);
+      state.workouts.unshift({
+        id: workoutId,
+        exercise: exercise.name,
+        weight,
+        reps,
+        notes,
+        sessionId: state.activeSession.id,
+        routineId: state.activeSession.routineId,
+        createdAt
+      });
+      saveState();
+      renderDashboard();
+      if (weightField) weightField.value = "";
+      if (repsField) repsField.value = "";
+      if (notesField) notesField.value = "";
+      showToast(`${exercise.name} logged: ${formatWeight(weight)} x ${reps}`, "success");
+      return;
+    }
+
+    const removeExerciseButton = event.target.closest("[data-session-remove-exercise]");
+    if (removeExerciseButton && state.activeSession) {
+      const exerciseId = removeExerciseButton.dataset.sessionRemoveExercise;
+      const exercise = state.activeSession.exercises.find((entry) => entry.id === exerciseId);
+      if (!exercise) return;
+      const setIds = new Set(exercise.sets.map((set) => set.id));
+      state.workouts = state.workouts.filter((workout) => !setIds.has(workout.id));
+      state.activeSession.exercises = state.activeSession.exercises.filter((entry) => entry.id !== exerciseId);
+      saveState();
+      renderDashboard();
+      showToast(`${exercise.name} removed from session`, "warning");
+      return;
+    }
+
+    const deleteSetButton = event.target.closest("[data-session-delete-set]");
+    if (deleteSetButton && state.activeSession) {
+      const exerciseId = deleteSetButton.dataset.sessionExerciseId;
+      const setId = deleteSetButton.dataset.sessionDeleteSet;
+      const exercise = state.activeSession.exercises.find((entry) => entry.id === exerciseId);
+      if (!exercise) return;
+      exercise.sets = exercise.sets.filter((set) => set.id !== setId);
+      state.workouts = state.workouts.filter((workout) => workout.id !== setId);
+      saveState();
+      renderDashboard();
+      showToast(`${exercise.name} set deleted`, "warning");
+    }
+  });
+}
+
 if (clearButton) {
   clearButton.addEventListener("click", () => {
     state = normalizeState({ templates: state.templates });
+    resetRoutineBuilder();
     saveState();
     localStorage.removeItem(LEGACY_STORAGE_KEY);
     localStorage.removeItem(OLDER_STORAGE_KEY);
@@ -1655,6 +2156,10 @@ if (templateSelect) {
 
 if (applyTemplateButton) {
   applyTemplateButton.addEventListener("click", applyTemplate);
+}
+
+if (addRoutineExerciseButton) {
+  addRoutineExerciseButton.addEventListener("click", addDraftExercise);
 }
 
 if (exerciseInput) {
@@ -1679,6 +2184,18 @@ if (exerciseFilter) {
 
 if (startRestTimerButton) {
   startRestTimerButton.addEventListener("click", () => startRestTimer(90));
+}
+
+if (startEmptySessionButton) {
+  startEmptySessionButton.addEventListener("click", startEmptySession);
+}
+
+if (finishSessionButton) {
+  finishSessionButton.addEventListener("click", finishActiveSession);
+}
+
+if (addSessionExerciseButton) {
+  addSessionExerciseButton.addEventListener("click", addExerciseToSession);
 }
 
 if (exportDataButton) {

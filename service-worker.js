@@ -6,8 +6,8 @@ const APP_ASSETS = [
   "./cyberpsycho.html",
   "./nutrition.html",
   "./reset-password.html",
-  "./styles.css?v=6",
-  "./script.js?v=6",
+  "./styles.css?v=7",
+  "./script.js?v=7",
   "./reset-password.js",
   "./supabase-config.js",
   "./app.webmanifest"
