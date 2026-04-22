@@ -1,4 +1,4 @@
-const CACHE_NAME = "edgelift-static-v1";
+const CACHE_NAME = "edgelift-static-v2";
 const APP_ASSETS = [
   "./",
   "./index.html",
@@ -12,6 +12,26 @@ const APP_ASSETS = [
   "./supabase-config.js",
   "./app.webmanifest"
 ];
+
+const NETWORK_FIRST_PATTERNS = [
+  /\/$/,
+  /\/index\.html$/,
+  /\/workouts\.html$/,
+  /\/cyberpsycho\.html$/,
+  /\/nutrition\.html$/,
+  /\/reset-password\.html$/,
+  /\/styles\.css(\?.*)?$/,
+  /\/script\.js(\?.*)?$/,
+  /\/reset-password\.js(\?.*)?$/
+];
+
+function shouldUseNetworkFirst(request) {
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) {
+    return false;
+  }
+  return NETWORK_FIRST_PATTERNS.some((pattern) => pattern.test(url.pathname + url.search));
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -31,6 +51,19 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") {
+    return;
+  }
+
+  if (shouldUseNetworkFirst(event.request)) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html")))
+    );
     return;
   }
 

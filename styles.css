@@ -186,6 +186,11 @@ body {
   gap: 0.75rem;
 }
 
+.auth-signed-in {
+  display: grid;
+  gap: 0.8rem;
+}
+
 .auth-actions .primary-btn,
 .auth-actions .ghost-btn,
 .auth-form .primary-btn {

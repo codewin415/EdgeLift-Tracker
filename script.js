@@ -269,14 +269,11 @@ function topbarElement() {
 function authPanelMarkup() {
   const mode = supabase ? "cloud" : "local";
   const identity = currentUser?.email || (mode === "cloud" ? "Cloud offline" : "Local mode");
-  const actionButton = currentUser
-    ? '<button type="button" class="ghost-btn" id="authSignOutButton">Sign Out</button>'
-    : supabase
-      ? '<button type="submit" class="primary-btn">Enter Cloud</button>'
-      : "";
-  const formFields = currentUser || !supabase
-    ? `<p class="auth-copy">${currentUser ? "Synced to Supabase. Your tracker will persist across devices." : "Fill in supabase-config.js to enable account sync and cloud saves."}</p>`
-    : `<label><span>Email</span><input id="authEmailInput" type="email" placeholder="runner@nightcity.dev" required></label><label><span>Password</span><input id="authPasswordInput" type="password" placeholder="Minimum 6 characters" required minlength="6"></label><div class="auth-actions"><button type="button" class="ghost-btn" id="authCreateButton">Create Account</button>${actionButton}<button type="button" class="ghost-btn" id="authResetButton">Reset Password</button></div>`;
+  const formFields = currentUser
+    ? `<div class="auth-signed-in"><p class="auth-copy">Synced to Supabase. Your tracker will persist across devices.</p><div class="auth-actions"><button type="button" class="ghost-btn" id="authSignOutButton">Sign Out</button></div></div>`
+    : !supabase
+      ? `<p class="auth-copy">Fill in supabase-config.js to enable account sync and cloud saves.</p>`
+      : `<label><span>Email</span><input id="authEmailInput" type="email" placeholder="runner@nightcity.dev" required></label><label><span>Password</span><input id="authPasswordInput" type="password" placeholder="Minimum 6 characters" required minlength="6"></label><div class="auth-actions"><button type="button" class="ghost-btn" id="authCreateButton">Create Account</button><button type="submit" class="primary-btn">Enter Cloud</button><button type="button" class="ghost-btn" id="authResetButton">Reset Password</button></div>`;
   return `<aside class="auth-shell panel"><div class="auth-heading"><p class="eyebrow">${mode === "cloud" ? "Cloud Sync" : "Offline Mode"}</p><strong>${identity}</strong></div><form id="authForm" class="auth-form">${formFields}</form><p id="authStatus" class="auth-status">${supabase ? (currentUser ? "Cloud sync active." : "Sign in or create an account to persist your tracker.") : "Using local storage only."}</p></aside>`;
 }
 
