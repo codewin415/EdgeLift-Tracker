@@ -1,4 +1,4 @@
-const CACHE_NAME = "edgelift-static-v2";
+const CACHE_NAME = "edgelift-static-v3";
 const APP_ASSETS = [
   "./",
   "./index.html",
@@ -34,6 +34,14 @@ function shouldUseNetworkFirst(request) {
   return NETWORK_FIRST_PATTERNS.some((pattern) => pattern.test(url.pathname + url.search));
 }
 
+function pageFallback(pathname) {
+  if (pathname.endsWith("/workouts.html")) return "./workouts.html";
+  if (pathname.endsWith("/cyberpsycho.html")) return "./cyberpsycho.html";
+  if (pathname.endsWith("/nutrition.html")) return "./nutrition.html";
+  if (pathname.endsWith("/reset-password.html")) return "./reset-password.html";
+  return "./index.html";
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_ASSETS))
@@ -61,6 +69,25 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(async () => {
+          const cachedPage = await caches.match(event.request);
+          if (cachedPage) {
+            return cachedPage;
+          }
+          return caches.match(pageFallback(requestUrl.pathname));
+        })
+    );
+    return;
+  }
+
   if (shouldUseNetworkFirst(event.request)) {
     event.respondWith(
       fetch(event.request)
@@ -69,7 +96,7 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
           return response;
         })
-        .catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html")))
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match(pageFallback(requestUrl.pathname))))
     );
     return;
   }
@@ -83,7 +110,7 @@ self.addEventListener("fetch", (event) => {
         const copy = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
         return response;
-      }).catch(() => caches.match("./index.html"));
+      }).catch(() => caches.match(pageFallback(requestUrl.pathname)));
     })
   );
 });
