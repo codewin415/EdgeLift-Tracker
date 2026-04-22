@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0f26">
+  <title>EdgeLift Tracker | Cyber Psycho</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="manifest" href="app.webmanifest">
+  <link rel="stylesheet" href="styles.css?v=5">
+</head>
+<body>
+  <div class="gridlines" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <main class="page-shell">
+    <header class="topbar panel">
+      <div class="topbar-brand">
+        <p class="eyebrow alert">Night City Gym OS</p>
+        <h1 class="topbar-title">Cyber Psycho</h1>
+      </div>
+      <nav class="nav-tabs" aria-label="Primary">
+        <a class="nav-tab" href="index.html">Overview</a>
+        <a class="nav-tab" href="workouts.html">Workouts</a>
+        <a class="nav-tab active" href="cyberpsycho.html">Cyber Psycho</a>
+        <a class="nav-tab" href="nutrition.html">Nutrition</a>
+      </nav>
+    </header>
+
+    <section class="cyberpsycho-panel panel">
+      <div class="panel-heading">
+        <p class="eyebrow alert">Cyber Psycho</p>
+        <h2>Heavy lift override</h2>
+      </div>
+
+      <div class="psycho-grid psycho-summary-grid">
+        <article class="psycho-card">
+          <span class="milestone-label">Edgerunner Rank</span>
+          <strong id="psychoRank">Rookie</strong>
+          <p id="psychoRankDetail">Build consistency and PRs to climb the board.</p>
+        </article>
+        <article class="psycho-card">
+          <span class="milestone-label">Boss Fight</span>
+          <strong id="bossFightName">Waiting...</strong>
+          <p id="bossFightDetail">Your next milestone session will queue up here.</p>
+        </article>
+      </div>
+
+      <div class="psycho-banner">
+        <div>
+          <h3 id="psychoHeadline">No max-out target yet</h3>
+          <p id="psychoSubhead">Log heavy sessions to light up PR targets and max-effort recommendations.</p>
+        </div>
+        <div class="threat-level">
+          <span class="milestone-label">Threat Level</span>
+          <strong id="threatLevel">Dormant</strong>
+        </div>
+      </div>
+
+      <div class="psycho-grid">
+        <article class="psycho-card">
+          <span class="milestone-label">Nearest PR</span>
+          <strong id="prTarget">Waiting...</strong>
+          <p id="prAdvice">Your next personal record target will show up here.</p>
+        </article>
+        <article class="psycho-card">
+          <span class="milestone-label">Heavy Day Focus</span>
+          <strong id="heavyFocus">Waiting...</strong>
+          <p id="heavyAdvice">Build a few tracked lifts and this module will recommend where to attack.</p>
+        </article>
+      </div>
+
+      <div class="panel-subsection">
+        <div class="subsection-heading">
+          <h3>PR Signal Trace</h3>
+          <p id="prChartLabel">Your strongest sets will chart here once you have enough data.</p>
+        </div>
+        <div id="prChart" class="pr-chart" aria-live="polite"></div>
+      </div>
+
+      <div class="panel-subsection">
+        <div class="subsection-heading">
+          <h3>Exercise Trend</h3>
+          <p id="exerciseTrendLabel">Pick up more workout history to unlock an exercise-specific trend line.</p>
+        </div>
+        <div id="exerciseTrend" class="trend-chart" aria-live="polite"></div>
+      </div>
+
+      <div class="panel-subsection">
+        <div class="subsection-heading">
+          <h3>Bounty Board</h3>
+          <p id="bountyBoardLabel">Contracts for PRs, consistency, and recovery discipline.</p>
+        </div>
+        <div id="bountyBoard" class="bounty-board" aria-live="polite"></div>
+      </div>
+
+      <div id="psychoList" class="psycho-list" aria-live="polite"></div>
+    </section>
+
+    <template id="exerciseTemplate">
+      <article class="exercise-card">
+        <div class="exercise-card-head">
+          <div>
+            <h3 class="exercise-name"></h3>
+            <p class="exercise-meta"></p>
+          </div>
+          <div class="exercise-pr"></div>
+        </div>
+        <div class="set-list"></div>
+      </article>
+    </template>
+  </main>
+
+  <script src="supabase-config.js"></script>
+  <script type="module" src="script.js?v=6"></script>
+</body>
+</html>

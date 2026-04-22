@@ -1,0 +1,2 @@
+window.EDGELIFT_SUPABASE_URL = "";
+window.EDGELIFT_SUPABASE_ANON_KEY = "";

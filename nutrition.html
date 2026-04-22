@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0f26">
+  <title>EdgeLift Tracker | Nutrition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="manifest" href="app.webmanifest">
+  <link rel="stylesheet" href="styles.css?v=5">
+</head>
+<body>
+  <div class="gridlines" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <main class="page-shell">
+    <header class="topbar panel">
+      <div class="topbar-brand">
+        <p class="eyebrow">Night City Gym OS</p>
+        <h1 class="topbar-title">Nutrition Stack</h1>
+      </div>
+      <nav class="nav-tabs" aria-label="Primary">
+        <a class="nav-tab" href="index.html">Overview</a>
+        <a class="nav-tab" href="workouts.html">Workouts</a>
+        <a class="nav-tab" href="cyberpsycho.html">Cyber Psycho</a>
+        <a class="nav-tab active" href="nutrition.html">Nutrition</a>
+      </nav>
+    </header>
+
+    <section class="nutrition-panel panel">
+      <div class="panel-heading">
+        <p class="eyebrow">Fuel Stack</p>
+        <h2>Nutrition and macros</h2>
+      </div>
+
+      <div class="nutrition-layout">
+        <form id="macroForm" class="workout-form">
+          <label>
+            Meal or snack
+            <input id="mealInput" name="meal" type="text" placeholder="Chicken rice bowl" maxlength="50" required>
+          </label>
+
+          <div class="macro-inputs">
+            <label>
+              Protein
+              <input id="proteinInput" name="protein" type="number" placeholder="40" min="0" step="1" required>
+            </label>
+            <label>
+              Carbs
+              <input id="carbsInput" name="carbs" type="number" placeholder="55" min="0" step="1" required>
+            </label>
+            <label>
+              Fats
+              <input id="fatsInput" name="fats" type="number" placeholder="12" min="0" step="1" required>
+            </label>
+            <label>
+              Calories
+              <input id="caloriesInput" name="calories" type="number" placeholder="500" min="0" step="1" required>
+            </label>
+          </div>
+
+          <button type="submit" class="primary-btn">Log Fuel</button>
+        </form>
+
+        <form id="goalForm" class="goal-form">
+          <div class="subsection-heading">
+            <h3>Daily Macro Goals</h3>
+            <p>Dial in your target intake and monitor how close you are to the plan.</p>
+          </div>
+
+          <div class="macro-inputs">
+            <label>
+              Calorie Goal
+              <input id="goalCaloriesInput" name="goalCalories" type="number" placeholder="2800" min="0" step="1" required>
+            </label>
+            <label>
+              Protein Goal
+              <input id="goalProteinInput" name="goalProtein" type="number" placeholder="200" min="0" step="1" required>
+            </label>
+            <label>
+              Carb Goal
+              <input id="goalCarbsInput" name="goalCarbs" type="number" placeholder="300" min="0" step="1" required>
+            </label>
+            <label>
+              Fat Goal
+              <input id="goalFatsInput" name="goalFats" type="number" placeholder="80" min="0" step="1" required>
+            </label>
+          </div>
+
+          <button type="submit" class="ghost-btn">Set Goals</button>
+        </form>
+      </div>
+
+      <div class="nutrition-layout">
+        <section class="goal-form">
+          <div class="subsection-heading">
+            <h3>Mode Presets</h3>
+            <p>Swap between bulk, cut, and maintain profiles without losing the cyberpunk vibe.</p>
+          </div>
+          <div class="preset-grid">
+            <button id="modeBulkButton" type="button" class="ghost-btn">Bulk</button>
+            <button id="modeCutButton" type="button" class="ghost-btn">Cut</button>
+            <button id="modeMaintainButton" type="button" class="ghost-btn">Maintain</button>
+          </div>
+          <p id="splitModeLabel" class="helper-copy">Current mode: Maintain</p>
+        </section>
+
+        <form id="hydrationForm" class="goal-form">
+          <div class="subsection-heading">
+            <h3>Hydration System</h3>
+            <p>Track water intake and keep your recovery systems cooled.</p>
+          </div>
+          <div class="macro-inputs hydration-inputs">
+            <label>
+              Water Added (oz)
+              <input id="hydrationInput" name="hydration" type="number" placeholder="20" min="1" step="1" required>
+            </label>
+            <label>
+              Daily Goal (oz)
+              <input id="hydrationGoalInput" name="hydrationGoal" type="number" placeholder="120" min="0" step="1" required>
+            </label>
+          </div>
+          <button type="submit" class="ghost-btn">Sync Hydration</button>
+        </form>
+      </div>
+
+      <div class="macro-dashboard">
+        <article class="macro-card">
+          <span class="milestone-label">Calories</span>
+          <strong id="calorieTotal">0</strong>
+          <p id="calorieGoalStatus">No goal set</p>
+        </article>
+        <article class="macro-card">
+          <span class="milestone-label">Protein</span>
+          <strong id="proteinTotal">0g</strong>
+          <p id="proteinGoalStatus">No goal set</p>
+        </article>
+        <article class="macro-card">
+          <span class="milestone-label">Carbs</span>
+          <strong id="carbsTotal">0g</strong>
+          <p id="carbsGoalStatus">No goal set</p>
+        </article>
+        <article class="macro-card">
+          <span class="milestone-label">Fats</span>
+          <strong id="fatsTotal">0g</strong>
+          <p id="fatsGoalStatus">No goal set</p>
+        </article>
+        <article class="macro-card">
+          <span class="milestone-label">Hydration</span>
+          <strong id="hydrationTotal">0 oz</strong>
+          <p id="hydrationStatus">No hydration goal set</p>
+        </article>
+      </div>
+
+      <div class="macro-split">
+        <div id="macroBars" class="macro-bars"></div>
+        <div id="mealList" class="meal-list" aria-live="polite"></div>
+      </div>
+
+      <div class="panel-subsection">
+        <div class="subsection-heading">
+          <h3>Recovery Checklist</h3>
+          <p>Monitor the habits that keep your chrome from frying.</p>
+        </div>
+        <form id="recoveryForm" class="recovery-grid">
+          <label>
+            Sleep (hours)
+            <input id="sleepInput" name="sleep" type="number" min="0" max="24" step="0.5" placeholder="8">
+          </label>
+          <label>
+            Steps
+            <input id="stepsInput" name="steps" type="number" min="0" step="100" placeholder="8000">
+          </label>
+          <label>
+            Energy (1-10)
+            <input id="energyInput" name="energy" type="number" min="1" max="10" step="1" placeholder="7">
+          </label>
+          <label>
+            Soreness (1-10)
+            <input id="sorenessInput" name="soreness" type="number" min="1" max="10" step="1" placeholder="3">
+          </label>
+          <label class="check-option">
+            <input id="mobilityInput" name="mobility" type="checkbox">
+            Mobility done
+          </label>
+          <label class="check-option">
+            <input id="stretchInput" name="stretch" type="checkbox">
+            Stretch done
+          </label>
+          <label class="check-option">
+            <input id="supplementsInput" name="supplements" type="checkbox">
+            Supplements taken
+          </label>
+          <button type="submit" class="primary-btn">Update Recovery</button>
+        </form>
+      </div>
+
+      <div class="panel-subsection">
+        <div class="subsection-heading">
+          <h3>Daily Fuel History</h3>
+          <p id="nutritionHistoryLabel">Your day-by-day intake totals will appear here once meals are logged.</p>
+        </div>
+        <div id="nutritionHistory" class="nutrition-history" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="supabase-config.js"></script>
+  <script type="module" src="script.js?v=6"></script>
+</body>
+</html>

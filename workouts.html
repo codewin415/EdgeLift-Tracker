@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0f26">
+  <title>EdgeLift Tracker | Workouts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="manifest" href="app.webmanifest">
+  <link rel="stylesheet" href="styles.css?v=5">
+</head>
+<body>
+  <div class="gridlines" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <main class="page-shell">
+    <header class="topbar panel">
+      <div class="topbar-brand">
+        <p class="eyebrow">Night City Gym OS</p>
+        <h1 class="topbar-title">Workouts</h1>
+      </div>
+      <nav class="nav-tabs" aria-label="Primary">
+        <a class="nav-tab" href="index.html">Overview</a>
+        <a class="nav-tab active" href="workouts.html">Workouts</a>
+        <a class="nav-tab" href="cyberpsycho.html">Cyber Psycho</a>
+        <a class="nav-tab" href="nutrition.html">Nutrition</a>
+      </nav>
+    </header>
+
+    <section class="workouts-panel panel">
+      <div class="panel-heading">
+        <p class="eyebrow">Training</p>
+        <h2>Workout archive</h2>
+      </div>
+
+      <div class="content-grid">
+        <section class="control-panel panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Quick Log</p>
+            <h2>Track a set</h2>
+          </div>
+
+          <div class="tool-row">
+            <label>
+              Template
+              <select id="templateSelect">
+                <option value="">Choose a workout template</option>
+              </select>
+            </label>
+            <button id="applyTemplateButton" type="button" class="ghost-btn">Load Template</button>
+          </div>
+
+          <form id="workoutForm" class="workout-form">
+            <label>
+              Exercise
+              <input id="exerciseInput" name="exercise" type="text" placeholder="Bench Press" maxlength="40" required>
+            </label>
+
+            <div class="dual-inputs">
+              <label>
+                Weight
+                <input id="weightInput" name="weight" type="number" placeholder="185" min="0" step="0.5" required>
+              </label>
+              <label>
+                Reps
+                <input id="repsInput" name="reps" type="number" placeholder="8" min="1" step="1" required>
+              </label>
+            </div>
+
+            <label>
+              Notes
+              <input id="notesInput" name="notes" type="text" placeholder="Paused set, felt strong" maxlength="80">
+            </label>
+
+            <button type="submit" class="primary-btn">Inject Session</button>
+          </form>
+
+          <div id="nextSetCard" class="insight-card" aria-live="polite"></div>
+        </section>
+
+        <section class="summary-panel panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Loadout</p>
+            <h2>Performance snapshot</h2>
+          </div>
+
+          <div id="highlightCard" class="highlight-card">
+            <p>No data yet. Log your first set to bring the board online.</p>
+          </div>
+
+          <div class="milestones">
+            <article>
+              <span class="milestone-label">Latest Lift</span>
+              <strong id="latestLift">Waiting...</strong>
+            </article>
+            <article>
+              <span class="milestone-label">Most Trained</span>
+              <strong id="mostTrained">Waiting...</strong>
+            </article>
+          </div>
+        </section>
+      </div>
+
+      <div class="panel-subsection">
+        <div class="panel-heading history-heading">
+          <div>
+            <p class="eyebrow">Archive</p>
+            <h2>Exercise logs</h2>
+          </div>
+          <div class="tool-row history-tools">
+            <button id="startRestTimer" type="button" class="ghost-btn">Start Rest Timer</button>
+            <span id="restTimerDisplay" class="timer-display">90s standby</span>
+            <button id="exportDataButton" type="button" class="ghost-btn">Export Backup</button>
+            <label class="ghost-btn import-btn" for="importDataInput">Import Backup</label>
+            <input id="importDataInput" type="file" accept="application/json" hidden>
+            <button id="clearButton" type="button" class="ghost-btn">Clear All Data</button>
+          </div>
+        </div>
+
+        <div class="tool-row filter-row">
+          <label>
+            Search logs
+            <input id="exerciseSearch" type="search" placeholder="Bench, squat, paused...">
+          </label>
+          <label>
+            Exercise filter
+            <select id="exerciseFilter">
+              <option value="">All exercises</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="exerciseList" class="exercise-list" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <template id="exerciseTemplate">
+    <article class="exercise-card">
+      <div class="exercise-card-head">
+        <div>
+          <h3 class="exercise-name"></h3>
+          <p class="exercise-meta"></p>
+        </div>
+        <div class="exercise-pr"></div>
+      </div>
+      <div class="set-list"></div>
+    </article>
+  </template>
+
+  <script src="supabase-config.js"></script>
+  <script type="module" src="script.js?v=6"></script>
+</body>
+</html>

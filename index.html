@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0f26">
+  <title>EdgeLift Tracker | Overview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="manifest" href="app.webmanifest">
+  <link rel="stylesheet" href="styles.css?v=5">
+</head>
+<body>
+  <div class="gridlines" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <main class="page-shell">
+    <header class="topbar panel">
+      <div class="topbar-brand">
+        <p class="eyebrow">Night City Gym OS</p>
+        <h1 class="topbar-title">EdgeLift Tracker</h1>
+      </div>
+      <nav class="nav-tabs" aria-label="Primary">
+        <a class="nav-tab active" href="index.html">Overview</a>
+        <a class="nav-tab" href="workouts.html">Workouts</a>
+        <a class="nav-tab" href="cyberpsycho.html">Cyber Psycho</a>
+        <a class="nav-tab" href="nutrition.html">Nutrition</a>
+      </nav>
+    </header>
+
+    <section class="hero-panel panel">
+      <p class="eyebrow">System Overview</p>
+      <h2 class="hero-title">Track volume, hunt PRs, and fuel the build.</h2>
+      <p class="hero-copy">
+        The tracker is now split into dedicated pages so each mode has room to breathe. Jump straight into workouts, heavy-day planning, or macro control.
+      </p>
+
+      <div class="hero-stats">
+        <article class="stat-card">
+          <span class="stat-label">Sessions Logged</span>
+          <strong id="sessionCount">0</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Exercises Active</span>
+          <strong id="exerciseCount">0</strong>
+        </article>
+        <article class="stat-card accent">
+          <span class="stat-label">Top Weight</span>
+          <strong id="topWeight">0 lb</strong>
+        </article>
+      </div>
+
+      <div class="hero-systems">
+        <article class="system-card">
+          <span class="stat-label">Edgerunner Rank</span>
+          <strong id="operatorRank">Rookie</strong>
+          <p id="rankProgress">Log sessions to start building rep.</p>
+        </article>
+        <article class="system-card">
+          <span class="stat-label">Recovery Status</span>
+          <strong id="recoveryStatus">Offline</strong>
+          <p id="recoverySummary">Sleep, soreness, and hydration checks will light up here.</p>
+        </article>
+        <article class="system-card accent">
+          <span class="stat-label">Current Streak</span>
+          <strong id="streakCount">0 days</strong>
+          <p id="streakSummary">Train on consecutive days to build district heat.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="mission-panel panel">
+      <div class="panel-heading">
+        <p class="eyebrow">Contracts</p>
+        <h2>Mission control</h2>
+      </div>
+      <div id="missionSummary" class="quest-summary" aria-live="polite"></div>
+
+      <div class="panel-subsection">
+        <div class="subsection-heading">
+          <h3>Daily Quests</h3>
+          <p>Reset every day. Claim rep when the contract is closed.</p>
+        </div>
+        <div id="missionBoard" class="mission-board" aria-live="polite"></div>
+      </div>
+
+      <div class="panel-subsection">
+        <div class="subsection-heading">
+          <h3>Weekly Contracts</h3>
+          <p>Longer milestones that persist across the current week.</p>
+        </div>
+        <div id="weeklyBoard" class="mission-board weekly-board" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="overview-grid">
+      <article class="panel overview-card">
+        <p class="eyebrow">Training</p>
+        <h2>Workouts</h2>
+        <p>Log sets, track PRs, and clean up individual exercise entries.</p>
+        <strong id="latestLift">Waiting...</strong>
+        <a class="primary-link" href="workouts.html">Open Workouts</a>
+      </article>
+
+      <article class="panel overview-card">
+        <p class="eyebrow alert">Heavy Mode</p>
+        <h2>Cyber Psycho</h2>
+        <p>Review attack zones, PR targets, and trend charts for your strongest lifts.</p>
+        <strong id="heavyFocus">Waiting...</strong>
+        <a class="primary-link" href="cyberpsycho.html">Open Cyber Psycho</a>
+      </article>
+
+      <article class="panel overview-card">
+        <p class="eyebrow">Fuel</p>
+        <h2>Nutrition Stack</h2>
+        <p>Track meals, macro goals, and day-by-day intake totals.</p>
+        <strong id="calorieTotal">0</strong>
+        <a class="primary-link" href="nutrition.html">Open Nutrition</a>
+      </article>
+    </section>
+  </main>
+
+  <script src="supabase-config.js"></script>
+  <script type="module" src="script.js?v=6"></script>
+</body>
+</html>
