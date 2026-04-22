@@ -144,7 +144,8 @@ function defaultProgression() {
 function defaultMeta() {
   return {
     lastUpdatedAt: "",
-    lastSyncedAt: ""
+    lastSyncedAt: "",
+    ownerUserId: ""
   };
 }
 
@@ -240,7 +241,8 @@ function normalizeState(source = {}) {
     },
     meta: {
       lastUpdatedAt: meta.lastUpdatedAt || "",
-      lastSyncedAt: meta.lastSyncedAt || ""
+      lastSyncedAt: meta.lastSyncedAt || "",
+      ownerUserId: meta.ownerUserId || ""
     },
     templates: Array.isArray(source.templates) && source.templates.length
       ? source.templates.map(normalizeTemplate)
@@ -270,8 +272,19 @@ function loadState() {
 
 function saveState() {
   state.meta.lastUpdatedAt = new Date().toISOString();
+  if (currentUser?.id) {
+    state.meta.ownerUserId = currentUser.id;
+  }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   queueRemoteSave();
+}
+
+function freshUserState() {
+  const next = normalizeState({ templates: state.templates });
+  if (currentUser?.id) {
+    next.meta.ownerUserId = currentUser.id;
+  }
+  return next;
 }
 
 function topbarElement() {
@@ -313,6 +326,17 @@ function setAuthStatus(message, isError = false) {
   node.classList.toggle("error", isError);
 }
 
+function friendlyAuthError(error) {
+  const message = error?.message || "Authentication failed.";
+  if (/email rate limit exceeded/i.test(message)) {
+    return "Signup email rate limit exceeded in Supabase. Wait a bit, or disable email confirmation / configure SMTP in Supabase Auth.";
+  }
+  if (/rate limit/i.test(message)) {
+    return "Too many auth attempts right now. Wait a moment and try again.";
+  }
+  return message;
+}
+
 function bindAuthUi() {
   const form = document.getElementById("authForm");
   const createButton = document.getElementById("authCreateButton");
@@ -330,7 +354,7 @@ function bindAuthUi() {
       setAuthStatus("Signing in...");
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        setAuthStatus(error.message, true);
+        setAuthStatus(friendlyAuthError(error), true);
       }
     });
   }
@@ -348,7 +372,7 @@ function bindAuthUi() {
         password,
         options: { emailRedirectTo: window.location.href }
       });
-      setAuthStatus(error ? error.message : "Account created. Check your email if confirmations are enabled.", Boolean(error));
+      setAuthStatus(error ? friendlyAuthError(error) : "Account created. Check your email if confirmations are enabled.", Boolean(error));
     });
   }
   if (resetButton && supabase) {
@@ -361,7 +385,7 @@ function bindAuthUi() {
       setAuthStatus("Sending password reset...");
       const redirectTo = new URL("reset-password.html", window.location.href).toString();
       const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-      setAuthStatus(error ? error.message : "Password reset email sent. Check your inbox.", Boolean(error));
+      setAuthStatus(error ? friendlyAuthError(error) : "Password reset email sent. Check your inbox.", Boolean(error));
     });
   }
   if (signOutButton && supabase) {
@@ -385,9 +409,10 @@ async function loadRemoteState() {
     return;
   }
   if (data?.state) {
+    const localOwnerMatches = !state.meta?.ownerUserId || state.meta.ownerUserId === currentUser.id;
     const localUpdatedAt = state.meta?.lastUpdatedAt ? new Date(state.meta.lastUpdatedAt).getTime() : 0;
     const remoteUpdatedAt = data.updated_at ? new Date(data.updated_at).getTime() : 0;
-    if (localUpdatedAt > remoteUpdatedAt) {
+    if (localOwnerMatches && localUpdatedAt > remoteUpdatedAt) {
       await persistRemoteState();
       setAuthStatus("Local state was newer, so it was pushed to cloud.");
       return;
@@ -400,14 +425,25 @@ async function loadRemoteState() {
     setAuthStatus("Cloud state loaded.");
     return;
   }
+  if (!state.meta?.ownerUserId || state.meta.ownerUserId === currentUser.id) {
+    await persistRemoteState();
+    setAuthStatus("Local state uploaded to cloud.");
+    return;
+  }
+  suppressRemoteSave = true;
+  state = freshUserState();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  suppressRemoteSave = false;
   await persistRemoteState();
-  setAuthStatus("Local state uploaded to cloud.");
+  renderDashboard();
+  setAuthStatus("Started a fresh cloud profile for this account.");
 }
 
 async function persistRemoteState() {
   if (!supabase || !currentUser || suppressRemoteSave) {
     return;
   }
+  state.meta.ownerUserId = currentUser.id;
   const { error } = await supabase
     .from("user_app_state")
     .upsert({ user_id: currentUser.id, state }, { onConflict: "user_id" });

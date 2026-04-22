@@ -22,7 +22,8 @@ const NETWORK_FIRST_PATTERNS = [
   /\/reset-password\.html$/,
   /\/styles\.css(\?.*)?$/,
   /\/script\.js(\?.*)?$/,
-  /\/reset-password\.js(\?.*)?$/
+  /\/reset-password\.js(\?.*)?$/,
+  /\/supabase-config\.js(\?.*)?$/
 ];
 
 function shouldUseNetworkFirst(request) {
@@ -51,6 +52,12 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") {
+    return;
+  }
+
+  const requestUrl = new URL(event.request.url);
+  if (requestUrl.origin !== self.location.origin) {
+    event.respondWith(fetch(event.request));
     return;
   }
 
