@@ -100,6 +100,7 @@ let state = loadState();
 let restTimerId = null;
 let restTimerRemaining = 90;
 let suppressRemoteSave = false;
+let toastTimeoutId = null;
 
 const supabaseUrl = window.EDGELIFT_SUPABASE_URL || "";
 const supabaseAnonKey = window.EDGELIFT_SUPABASE_ANON_KEY || "";
@@ -324,6 +325,32 @@ function setAuthStatus(message, isError = false) {
   }
   node.textContent = message;
   node.classList.toggle("error", isError);
+}
+
+function ensureToastHost() {
+  let toast = document.getElementById("appToast");
+  if (toast) {
+    return toast;
+  }
+  toast = document.createElement("div");
+  toast.id = "appToast";
+  toast.className = "app-toast";
+  toast.setAttribute("aria-live", "polite");
+  toast.setAttribute("aria-atomic", "true");
+  document.body.appendChild(toast);
+  return toast;
+}
+
+function showToast(message, tone = "default") {
+  const toast = ensureToastHost();
+  toast.textContent = message;
+  toast.className = `app-toast ${tone} visible`;
+  if (toastTimeoutId) {
+    clearTimeout(toastTimeoutId);
+  }
+  toastTimeoutId = window.setTimeout(() => {
+    toast.classList.remove("visible");
+  }, 2200);
 }
 
 function friendlyAuthError(error) {
@@ -1202,10 +1229,22 @@ function renderWorkouts() {
     entries
       .slice()
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .forEach((entry) => {
+      .forEach((entry, index) => {
         const chip = document.createElement("div");
-        chip.className = "set-chip";
-        chip.innerHTML = `<strong>${formatWeight(entry.weight)} x ${entry.reps}</strong><span>${formatDate(entry.createdAt)}${entry.notes ? ` | ${entry.notes}` : ""}</span><button type="button" class="delete-btn" data-workout-id="${entry.id}">Delete</button>`;
+        chip.className = `set-chip${index === 0 ? " recent" : ""}`;
+        chip.innerHTML = `
+          <div class="set-chip-head">
+            <div class="set-chip-title">
+              <div class="set-chip-topline">
+                <strong>${formatWeight(entry.weight)} x ${entry.reps}</strong>
+                ${index === 0 ? '<span class="set-chip-badge">Latest</span>' : ""}
+              </div>
+              <span class="set-chip-timestamp">${formatDate(entry.createdAt)}</span>
+            </div>
+            <button type="button" class="delete-btn" data-workout-id="${entry.id}" aria-label="Delete ${exerciseName} set logged at ${formatDate(entry.createdAt)}">Delete</button>
+          </div>
+          <p class="set-chip-note">${entry.notes || "No notes logged for this set."}</p>
+        `;
         setList.appendChild(chip);
       });
 
@@ -1496,6 +1535,7 @@ if (workoutForm) {
     state.workouts.unshift({ id: makeId("workout"), exercise, weight, reps, notes, createdAt: new Date().toISOString() });
     saveState();
     renderDashboard();
+    showToast(`${exercise} logged: ${formatWeight(weight)} x ${reps}`, "success");
     workoutForm.reset();
     exerciseInput.focus();
   });
@@ -1582,9 +1622,13 @@ if (exerciseList) {
   exerciseList.addEventListener("click", (event) => {
     const target = event.target.closest("[data-workout-id]");
     if (!target) return;
+    const deletedWorkout = state.workouts.find((workout) => workout.id === target.dataset.workoutId);
     state.workouts = state.workouts.filter((workout) => workout.id !== target.dataset.workoutId);
     saveState();
     renderDashboard();
+    if (deletedWorkout) {
+      showToast(`Deleted ${deletedWorkout.exercise} set`, "warning");
+    }
   });
 }
 
